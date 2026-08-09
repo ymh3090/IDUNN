@@ -39,6 +39,17 @@ def add_entry(url: str, username: str, password: str, salt: bytes):
     conn.close()
 
 
+def update_entry(entry_id: int, url: str, username: str, password: str, salt: bytes):
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE entries SET url=?, username=?, password=?, salt=? WHERE id=?",
+        (url, username, password, salt, entry_id)
+    )
+    conn.commit()
+    conn.close()
+
+
 def get_all_entries():
     """Return all rows as a list."""
     conn = sqlite3.connect(DB_NAME)
