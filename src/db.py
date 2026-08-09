@@ -1,6 +1,6 @@
-import os
 import sqlite3
 from datetime import datetime
+from crypto_utils import derive_key, encrypt, decrypt, generate_salt
 
 DB_NAME = "password_manager.db"
 
@@ -9,8 +9,6 @@ def init_db():
     """Create the entries table if it doesn't exist."""
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
-    # write the CREATE TABLE IF NOT EXISTS statement here
-    # columns: id (INTEGER PRIMARY KEY AUTOINCREMENT), url, username, password, salt, created_at
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS entries (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -21,69 +19,85 @@ def init_db():
     created_at TEXT NOT NULL
     )
                         """)
-    # hint: salt will be raw bytes -> use BLOB type for it
-    # hint: created_at -> TEXT, you can default it or set it manually with datetime
     conn.commit()
     conn.close()
 
 
-def add_entry(url: str, username: str, password: str, salt: bytes):
+def add_entry(url: str, username: str, master_password: str, entry_password: str):
+    """Encrypts entry_password using a key derived from master_password + a fresh salt,
+    then stores the encrypted bytes. master_password itself is never stored."""
+    salt = generate_salt()
+    key = derive_key(master_password, salt)
+    encrypted_password = encrypt(entry_password, key)
+
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
     cursor.execute(
         "INSERT INTO entries (url, username, password, salt, created_at) VALUES (?, ?, ?, ?, ?)",
-        (url, username, password, salt, datetime.now().isoformat())
+        (url, username, encrypted_password, salt, datetime.now().isoformat())
     )
-    # NEVER f-strings (SQL injection)
     conn.commit()
     conn.close()
 
 
-def update_entry(entry_id: int, url: str, username: str, password: str, salt: bytes):
+def update_entry(entry_id: int, url: str, username: str, master_password: str, entry_password: str):
+    """Re-derives a fresh salt + key and re-encrypts, same as add_entry,
+    instead of accepting an already-encrypted password directly."""
+    salt = generate_salt()
+    key = derive_key(master_password, salt)
+    encrypted_password = encrypt(entry_password, key)
+
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
     cursor.execute(
         "UPDATE entries SET url=?, username=?, password=?, salt=? WHERE id=?",
-        (url, username, password, salt, entry_id)
+        (url, username, encrypted_password, salt, entry_id)
     )
     conn.commit()
     conn.close()
 
 
 def get_all_entries():
-    """Return all rows as a list."""
+    """Return all rows as a list. Password column will be encrypted bytes, not plaintext."""
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
-    # SELECT * FROM entries, then cursor.fetchall()
-    cursor.execute("""SELECT url, username, password, salt FROM entries""")
-    # r=cursor.fetchall()
-    return cursor.fetchall()
-    # conn.close()
-    # return the list
+    cursor.execute("SELECT id, url, username, password, salt, created_at FROM entries")
+    rows = cursor.fetchall()
+    conn.close()
+    return rows
+
+
+def get_decrypted_entry(entry_id: int, master_password: str):
+    """Fetch one row and decrypt its password using master_password + that row's stored salt."""
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("SELECT password, salt FROM entries WHERE id=?", (entry_id,))
+    row = cursor.fetchone()
+    conn.close()
+
+    if row is None:
+        raise ValueError(f"No entry with id {entry_id}")
+
+    encrypted_password, salt = row
+    key = derive_key(master_password, salt)
+    return decrypt(encrypted_password, key)
 
 
 def delete_entry(entry_id: int):
     """Delete one row by id."""
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
-    # DELETE FROM entries WHERE id = ?
-    cursor.execute("""delete from entries where id = ?""", (entry_id,))
+    cursor.execute("DELETE FROM entries WHERE id = ?", (entry_id,))
     conn.commit()
     conn.close()
 
 
 if __name__ == "__main__":
-    # init_db()
-    # write your manual test here:
-    # 1. add_entry(...) twice with fake data
-    # 2. print(get_all_entries())
-    # 3. confirm both rows show up with correct columns
-    # add_entry("https://en.wikipedia.org","lol","1234324",b"ilove156422&^$")
-    # add_entry("https://letterboxd.com","lol2","12343242",b"ilove156422&^$2")
-    url=input("Enter the URL you wish to login to: ")
-    username=input("Enter your username: ")
-    password=input("Enter your password: ")
-    salt=os.urandom(16)
-    add_entry(url, username, password, salt)
-    print(get_all_entries())
+    init_db()
 
+    result = get_decrypted_entry(1, "nuts123")
+    print("Decrypted:", result)
+
+    # Deliberately left raw (no try/except) — confirms Fernet fails loudly on wrong key.
+    # Uncomment to re-test:
+    # print(get_decrypted_entry(1, "wrong_password"))
