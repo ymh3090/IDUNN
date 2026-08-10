@@ -70,16 +70,42 @@ def decrypt(token: bytes, key: bytes) -> str:
 Tested: encrypt → decrypt round-trip returns the original string, using two
 *separately derived* keys (same password + salt) to simulate real unlock behavior.
 
-### Still to do
-- Wire `add_entry()` in `database.py` to call `derive_key()` + `encrypt()` before inserting
-- Add a decrypt path for reading entries back
-- Confirm wrong master password fails to decrypt (expected behavior, not a bug)
-- Remove old Day 1 plaintext test rows from the DB
+### `add_entry()` — wired to crypto
+```python
+def add_entry(url: str, username: str, master_password: str, entry_password: str):
+    salt = generate_salt()
+    key = derive_key(master_password, salt)
+    encrypted_password = encrypt(entry_password, key)
+    # ... INSERT with encrypted_password + salt
+```
+Signature takes two different passwords — don't confuse them:
+- `master_password`: yours, unlocks everything, never stored
+- `entry_password`: the site's password, gets encrypted before storage
 
-### `update_entry()` — drafted, needs fixes
-Bugs caught: trailing comma before `WHERE`, mismatched placeholder/value order,
-missing `commit()`/`close()`, and updating by `url` instead of `id` (unsafe —
-`url` isn't unique, could update multiple rows unintentionally).
+### `get_decrypted_entry()` — read path
+Pulls `password, salt` for a row, re-derives the key from `master_password` + that
+row's stored salt, decrypts, returns plaintext.
+
+### Day 2 core test — PASSED ✅
+- Correct master password → decrypts back to exact original (`yayanuts123`)
+- Wrong master password → `cryptography.fernet.InvalidToken` crash, no silent garbage returned
+
+This is the security property that matters: Fernet signs (HMAC) as well as encrypts,
+so a wrong key fails loudly instead of producing plausible-looking wrong plaintext.
+Deliberately left this crash raw (no try/except) for testing — friendly error handling
+comes in Day 3 when building the CLI.
+
+### Day 2 — remaining todos
+- [ ] `get_all_entries()` still missing `conn.close()` — leaks the connection every call
+- [ ] Delete old Day 1 plaintext test rows sitting in `password_manager.db` (predate encryption)
+- [ ] `update_entry()` still takes a raw `password` param — needs to re-derive + re-encrypt
+      like `add_entry()` does, not accept an already-processed value
+
+### `update_entry()`  bugs caught while drafting (now fixed for basic wiring, re-encryption still TODO above)
+Trailing comma before `WHERE`, mismatched placeholder/value order, missing
+`commit()`/`close()`, and updating by `url` instead of `id` (unsafe — `url` isn't
+unique, could update multiple rows unintentionally). Current version updates by `id`,
+matching `delete_entry()`'s pattern — but still needs the encrypt-before-store step.
 
 ---
 
@@ -108,7 +134,7 @@ Old exploratory code kept here for reference instead of cluttering the working f
 #     memory_cost=64 * 1024,
 #     ad=None,
 #     secret=None,
-# ).
+# )
 # kdf.verify(b"my great password", key)
 #
 # Fernet implementation notes (from docs):

@@ -1,6 +1,6 @@
 import sqlite3
 from datetime import datetime
-from crypto_utils import derive_key, encrypt, decrypt, generate_salt
+from src.crypto_utils import derive_key, encrypt, decrypt, generate_salt
 
 DB_NAME = "password_manager.db"
 
@@ -40,9 +40,7 @@ def add_entry(url: str, username: str, master_password: str, entry_password: str
     conn.close()
 
 
-def update_entry(entry_id: int, url: str, username: str, master_password: str, entry_password: str):
-    """Re-derives a fresh salt + key and re-encrypts, same as add_entry,
-    instead of accepting an already-encrypted password directly."""
+def update_entry(entry_id: int, url: str, username: str, master_password: str, entry_password: str) -> bool:
     salt = generate_salt()
     key = derive_key(master_password, salt)
     encrypted_password = encrypt(entry_password, key)
@@ -54,8 +52,9 @@ def update_entry(entry_id: int, url: str, username: str, master_password: str, e
         (url, username, encrypted_password, salt, entry_id)
     )
     conn.commit()
+    updated = cursor.rowcount > 0
     conn.close()
-
+    return updated
 
 def get_all_entries():
     """Return all rows as a list. Password column will be encrypted bytes, not plaintext."""
@@ -83,13 +82,14 @@ def get_decrypted_entry(entry_id: int, master_password: str):
     return decrypt(encrypted_password, key)
 
 
-def delete_entry(entry_id: int):
-    """Delete one row by id."""
+def delete_entry(entry_id: int) -> bool:
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
     cursor.execute("DELETE FROM entries WHERE id = ?", (entry_id,))
     conn.commit()
+    deleted = cursor.rowcount > 0
     conn.close()
+    return deleted
 
 
 if __name__ == "__main__":

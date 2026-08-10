@@ -8,11 +8,11 @@
       <jdbc-url>jdbc:sqlite:$PROJECT_DIR$/tutorial.db</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
-    <data-source source="LOCAL" name="password_manager" uuid="842b44bf-ae8d-4bd6-975b-84e482620729">
+    <data-source source="LOCAL" name="password_manager" uuid="15a17331-6900-43f8-b817-c1910a3a8f30">
       <driver-ref>sqlite.xerial</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
-      <jdbc-url>jdbc:sqlite:$PROJECT_DIR$/src/password_manager.db</jdbc-url>
+      <jdbc-url>jdbc:sqlite:$PROJECT_DIR$/password_manager.db</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
   </component>
