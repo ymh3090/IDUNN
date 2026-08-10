@@ -101,7 +101,7 @@ comes in Day 3 when building the CLI.
 - [ ] `update_entry()` still takes a raw `password` param — needs to re-derive + re-encrypt
       like `add_entry()` does, not accept an already-processed value
 
-### `update_entry()`  bugs caught while drafting (now fixed for basic wiring, re-encryption still TODO above)
+### `update_entry()` — bugs caught while drafting (now fixed for basic wiring, re-encryption still TODO above)
 Trailing comma before `WHERE`, mismatched placeholder/value order, missing
 `commit()`/`close()`, and updating by `url` instead of `id` (unsafe — `url` isn't
 unique, could update multiple rows unintentionally). Current version updates by `id`,
@@ -143,7 +143,88 @@ Old exploratory code kept here for reference instead of cluttering the working f
 # - Initialization vectors generated using os.urandom().
 ```
 
-## Notes / decisions
-- Table named `entries`, not `passwords` — avoids drawing attention to the file's purpose.
-- Master password / derived key is never written to disk — only the salt is stored per entry.
-- Rule for the whole project: no custom crypto. Vetted primitives only (Fernet, Argon2id).
+---
+
+## Day 3 — CLI + master password flow
+
+**Goal:** turn the tested functions into an actual runnable program — unlock once with a
+master password, then add/list/update/delete during that session.
+
+### `main.py`
+- `init_db()` runs first, then `getpass.getpass()` prompts for the master password once —
+  held in memory for the session, never re-asked, never stored to disk
+- Menu loop: Add, List, Delete, Update, Exit
+- `add_entry()` signature takes two different passwords — kept distinct on purpose:
+  - `master_password`: unlocks everything, never stored
+  - `entry_password`: the site's password, gets encrypted before storage
+
+### Bugs caught and fixed during CLI build
+- `update_entry()` / `delete_entry()` silently no-op'd on a nonexistent id — no error,
+  no feedback, just did nothing. Fixed by checking `cursor.rowcount > 0` and returning
+  a bool so the CLI can report "No entry with id X found."
+- Non-numeric id input (`int(input(...))`) crashed with `ValueError` — wrapped in
+  try/except with `continue` to loop back cleanly instead of crashing
+- Empty website/username/password allowed a blank "ghost" entry — added a check
+  rejecting empty fields before calling `add_entry()`
+- Duplicate `elif choice == "4":` block in main.py (dead code from early drafting) — removed
+
+### Automated testing
+Manual CLI testing (typing into the menu each time) was replaced with `unittest`:
+```
+python -m unittest test_db.py -v
+```
+Covers: add+decrypt round-trip, wrong master password raises, delete/update on
+nonexistent id return False, delete doesn't shift surrounding ids. All passing.
+
+### Verified through manual stress-testing
+- Ids don't shift or corrupt on delete
+- Wrong master password across a full session correctly fails on every old entry,
+  no silent garbage decryption
+- Unicode/emoji in fields round-trip correctly
+- Duplicate entries get separate ids and separate salts (salts never repeat)
+
+---
+
+## Day 4 — Hardening
+
+**Goal:** reduce exposure of decrypted passwords and confirm crypto params meet
+current security recommendations.
+
+### Clipboard copy instead of printing to screen
+Redesigned "List entries" to show only `id | url | username` — **never the password**.
+Added a separate "Copy password" menu option that decrypts one entry on demand and
+sends it to the clipboard only.
+
+```python
+def copy_with_clear(text: str, delay: int = 20):
+    pyperclip.copy(text)
+    print(f"Password copied to clipboard. Clearing in {delay} seconds...")
+    threading.Timer(delay, lambda: pyperclip.copy('')).start()
+```
+Verified manually: password pastes correctly right after copy, clipboard is empty
+after the 20s delay elapses.
+
+Rationale for the split (list = metadata only, copy = separate action): printing
+passwords to the terminal defeats hardening even with clipboard auto-clear — terminal
+scrollback and shoulder-surfing are still exposed. Only the clipboard entry point
+handles decrypted plaintext, and only briefly.
+
+### KDF parameter review against OWASP
+Checked `derive_key()`'s Argon2id settings against the OWASP Password Storage Cheat
+Sheet's current minimum recommendation (memory ≥19 MiB, iterations ≥2, parallelism 1).
+
+| Param | Was | OWASP min | Action |
+|---|---|---|---|
+| `memory_cost` | 64 MB | 19 MB | Already above minimum — kept as-is |
+| `iterations` | 1 | 2 | **Bumped to 2** — was below the floor |
+| `lanes` | 4 | — | Fine, matches typical multi-core guidance |
+
+Not unit-tested directly — parameter values aren't a behavior to assert, they're a
+tuning decision. Existing `test_db.py` suite (round-trip, wrong-password-fails) still
+passes after the change, confirming correctness wasn't affected.
+
+### Notes on entries — multiple accounts per site
+Confirmed the schema already supports multiple entries for the same `url` (no unique
+constraint on it) — e.g. two Gmail accounts just become two separate rows with
+different ids and salts. Worth remembering if a future "look up by url" feature is
+added: it must return a list of matches, not assume one.
