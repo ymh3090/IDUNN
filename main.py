@@ -13,7 +13,6 @@ def main():
     init_db()  # 1. make sure the table exists before anything else
 
     master_password = getpass.getpass("Enter master password: ")  # 2. unlock once, held in memory for the session
-    # master_password=input("Enter master password: ")
     # 3. the menu loop — everything below reuses master_password, never asks again
     while True:
         print("""
