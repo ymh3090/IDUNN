@@ -89,6 +89,10 @@ def main():
         else:
             print("Invalid choice")
 
+import customtkinter as ctk
+from hub_window import HubWindow
 
 if __name__ == "__main__":
-    main()
+    ctk.set_appearance_mode("dark")
+    app = HubWindow()
+    app.mainloop()

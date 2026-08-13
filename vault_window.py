@@ -1,6 +1,7 @@
 import customtkinter as ctk
 from cryptography.fernet import InvalidToken
-
+import pyperclip
+import threading
 from src.db import get_all_entries, add_entry, delete_entry, get_decrypted_entry
 from src.password_utils import generate_password, check_strength
 
@@ -14,7 +15,7 @@ class VaultWindow(ctk.CTkToplevel):
         super().__init__(master)  # master = the parent window (login window)
         self.master_password = master_password
 
-        self.title("Your Vault")
+        self.title("The Vault")
         self.geometry("900x600")
 
         self._build_static_ui()
@@ -40,6 +41,9 @@ class VaultWindow(ctk.CTkToplevel):
             command=self.open_add_entry_popup,
         )
         add_button.pack(pady=10)
+
+        self.status_label = ctk.CTkLabel(self, text="", text_color="#e05555")
+        self.status_label.pack(pady=5)
 
     def refresh_list(self):
         for widget in self.scroll_frame.winfo_children():
@@ -93,22 +97,16 @@ class VaultWindow(ctk.CTkToplevel):
         try:
             decrypted = get_decrypted_entry(entry_id, self.master_password)
         except InvalidToken:
-            print("Wrong master password — can't decrypt this entry.")  # swap for a status label later
+            self.status_label.configure(text="Wrong master password — can't decrypt this entry.", text_color="#e05555")
             return
         except ValueError as e:
-            print(e)
+            self.status_label.configure(text=str(e), text_color="#e05555")
             return
 
-        import pyperclip
-        import threading
-
         pyperclip.copy(decrypted)
-        print("Password copied. Clearing in 20 seconds...")
+        self.status_label.configure(text="Copied! Clearing in 20 seconds...", text_color="#3ac96b")
         threading.Timer(20, lambda: pyperclip.copy("")).start()
 
-    # ------------------------------------------------------------------
-    # Add entry popup
-    # ------------------------------------------------------------------
     def open_add_entry_popup(self):
         popup = ctk.CTkToplevel(self)
         popup.title("Add entry")

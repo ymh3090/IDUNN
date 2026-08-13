@@ -53,9 +53,16 @@ def generate_custom_password(upper_count: int = 0, lower_count: int = 0,
 def check_strength(password: str) -> dict:
     """Returns a strength assessment using zxcvbn's pattern-based analysis
     (dictionary words, sequences, keyboard patterns, l33t speak, repeats)."""
+    if len(password) > 72:
+        return {
+            "score": 4,
+            "warning": "",
+            "suggestions": [],
+            "crack_time": "centuries (password exceeds analysis length, treated as very strong)",
+        }
     result = zxcvbn(password)
     return {
-        "score": result["score"],  # 0 (weakest) - 4 (strongest)
+        "score": result["score"],
         "warning": result["feedback"]["warning"],
         "suggestions": result["feedback"]["suggestions"],
         "crack_time": result["crack_times_display"]["offline_slow_hashing_1e4_per_second"],
