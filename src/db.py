@@ -91,13 +91,9 @@ def delete_entry(entry_id: int) -> bool:
     conn.close()
     return deleted
 
-
-if __name__ == "__main__":
-    init_db()
-
-    result = get_decrypted_entry(1, "nuts123")
-    print("Decrypted:", result)
-
-    # Deliberately left raw (no try/except) — confirms Fernet fails loudly on wrong key.
-    # Uncomment to re-test:
-    # print(get_decrypted_entry(1, "wrong_password"))
+#
+# if __name__ == "__main__":
+#     init_db()
+#
+#     result = get_decrypted_entry(1, "nuts123")
+#     print("Decrypted:", result)
