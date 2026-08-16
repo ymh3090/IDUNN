@@ -1,31 +1,23 @@
-# IDUNA — Local Password Manager
+# Iðunn (IDUNN) 
 
-A local-first password manager built in Python. Stores website/service links,
-usernames, and passwords — encrypted, on your own machine, nothing sent
-anywhere. Includes a standalone password generator and strength checker.
-
-Built as a learning project over about a week, using Claude for guidance on
-architecture, debugging, and security best practices, while I wrote and
-tested all the code myself.
-
----
+A desktop password manager built with Python and CustomTkinter. Store your logins in an encrypted vault, generate cryptographically secure passwords, and check how strong your existing ones really are
+all in one app, no cloud, no tracking.
 
 ## Features
 
-- **Vault** — add, view, copy, and delete saved entries. Passwords are never
+- **Vault**: add, view, copy, and delete saved entries. Passwords are never
   shown on screen; they're copied to the clipboard on demand and the
-  clipboard auto-clears after 20 seconds.
-- **Master password** — unlocks the vault. Never stored anywhere, not even
-  hashed — every unlock re-derives the encryption key from what you type.
+  clipboard auto-clears.
+- **Master password**: unlocks the vault. Never stored anywhere, not even
+  hashed every unlock re-derives the encryption key from what you type.
   A wrong master password fails to decrypt cleanly; nothing is guessed or
   silently corrupted.
-- **Password generator** — quick mode (length + symbols toggle) or custom
-  mode (exact count of uppercase/lowercase/digits/special characters).
-  Uses Python's `secrets` module — cryptographically secure, not `random`.
-- **Password strength checker** — live feedback as you type, powered by
+- **Password generator**: quick mode or custom mode (exact count of uppercase/lowercase/digits/special characters).
+  Uses Python's `secrets` module.
+- **Password strength checker**: live feedback as you type, powered by
   `zxcvbn` (pattern-based analysis: dictionary words, keyboard walks,
-  sequences, repeats — not naive character-type counting).
-- **Desktop GUI** — built with `customtkinter`. A hub screen links to three
+  sequences, repeats.
+- **Desktop GUI**: built with `customtkinter`. A hub screen links to three
   independent tools: Vault, Generator, Checker.
 
 ---
@@ -38,10 +30,8 @@ tested all the code myself.
 - **Fernet (AES-128-CBC + HMAC-SHA256)** for encrypting each stored
   password. Every entry gets its own random salt, so identical passwords
   never produce identical ciphertext.
-- The master password is used only in memory, per session, to re-derive
+- The master password is used only per session, to re-derive
   the key on demand. It is never written to disk in any form.
-- No custom cryptography — every primitive here is from the `cryptography`
-  library, chosen deliberately over hand-rolled alternatives.
 
 ---
 
@@ -61,40 +51,31 @@ src/
   password_utils.py        Password generation and zxcvbn-based strength checking
 ```
 
-`generator_window.py` and `checker_window.py` only import from
-`password_utils.py` — they have no access to the vault, the database, or
-the master password. They work standalone, with no data ever unlocked.
-
 ---
-
 ## Setup
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/ymh3090/IDUNN
+pip install customtkinter cryptography zxcvn pyperclip
 cd password_manager
-pip install -r requirements.txt
 python main.py
 ```
-
-### Dependencies
-- `customtkinter` — GUI
-- `cryptography` — Argon2id key derivation, Fernet encryption
-- `zxcvbn` — password strength analysis
-- `pyperclip` — clipboard copy for passwords and generated results
-
----
+or u can download the executable file in the releases file to run the app directly
 
 ## How it works, briefly
 
-1. On first run, `init_db()` creates a local SQLite database with one
-   `entries` table (id, url, username, encrypted password, salt, created_at).
+1. On first run, we create a local SQLite database with one
+   table.
 2. Opening the Vault prompts for a master password. If entries already
-   exist, it's verified by attempting to decrypt one — there is no stored
-   hash or check of the master password itself.
+   exist, it's verified by attempting to decrypt one **there is no stored
+   hash or check of the master password itself.**
 3. Adding an entry: a fresh random salt is generated, the master password
    that salt derive a one-time encryption key via Argon2id, and the
    entry's password is encrypted with Fernet before being written to disk.
 4. Reading a password back: the same master password + that entry's
-   stored salt re-derive the exact same key, and Fernet decrypts it. A
-   wrong master password produces a hard `InvalidToken` failure — no
-   partial or garbled plaintext is ever returned.
+   stored salt re-derive the exact same key, and Fernet decrypts it.
+
+***
+## Contributing
+It's a personal side project, but if you spot a bug or a security issue,
+open an issue or PR  especially if it's the security kind. Feedback on the crypto choices is very welcome.

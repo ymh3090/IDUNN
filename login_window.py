@@ -9,7 +9,7 @@ class LoginWindow(ctk.CTkToplevel):
     def __init__(self, master):
         super().__init__(master)
         init_db()
-        self.title("IDUNA")
+        self.title("IDUNN")
         self.geometry("900x600")
         self._build_ui()
         self.entry_1.bind("<Return>", self.on_unlock)

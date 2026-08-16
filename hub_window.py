@@ -14,12 +14,12 @@ class HubWindow(ctk.CTk):
 
     def __init__(self):
         super().__init__()
-        self.title("IDUNA")
+        self.title("IDUNN")
         self.geometry("500x400")
         self._build_ui()
 
     def _build_ui(self):
-        ctk.CTkLabel(self, text="IDUNA", font=ctk.CTkFont(size=32, weight="bold")).pack(pady=30)
+        ctk.CTkLabel(self, text="IDUNN", font=ctk.CTkFont(size=32, weight="bold")).pack(pady=30)
         ctk.CTkButton(self, text="Vault", command=self.open_vault).pack(pady=10)
         ctk.CTkButton(self, text="Password Generator", command=self.open_generator).pack(pady=10)
         ctk.CTkButton(self, text="Password Checker", command=self.open_checker).pack(pady=10)
