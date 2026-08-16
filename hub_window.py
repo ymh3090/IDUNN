@@ -1,17 +1,10 @@
 import customtkinter as ctk
-
 from login_window import LoginWindow
 from generator_window import GeneratorWindow
 from checker_window import CheckerWindow
 
 
 class HubWindow(ctk.CTk):
-    """The ONLY ctk.CTk() root in the whole app. Every other window
-    (Login, Vault, Generator, Checker) must inherit from ctk.CTkToplevel
-    and take `master` as their first constructor argument — never
-    create a second ctk.CTk() root, that's what caused the
-    'invalid command name ...check_dpi_scaling' crash earlier."""
-
     def __init__(self):
         super().__init__()
         self.title("IDUNN")
@@ -33,8 +26,8 @@ class HubWindow(ctk.CTk):
     def open_checker(self):
         CheckerWindow(self)
 
-
-if __name__ == "__main__":
-    ctk.set_appearance_mode("dark")
-    app = HubWindow()
-    app.mainloop()
+#
+# if __name__ == "__main__":
+#     ctk.set_appearance_mode("dark")
+#     app = HubWindow()
+#     app.mainloop()

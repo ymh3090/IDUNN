@@ -68,16 +68,16 @@ def check_strength(password: str) -> dict:
         "crack_time": result["crack_times_display"]["offline_slow_hashing_1e4_per_second"],
     }
 
-
-if __name__ == "__main__":
-    test_passwords = [
-        "123",
-        "password",
-        "Password1!",
-        "correct horse battery staple",
-        generate_password(10),
-        generate_custom_password(upper_count=2, lower_count=4, digit_count=2, special_count=2),
-    ]
-    for pw in test_passwords:
-        r = check_strength(pw)
-        print(f"{pw!r} -> score {r['score']}, crack time: {r['crack_time']}")
+#
+# if __name__ == "__main__":
+#     test_passwords = [
+#         "123",
+#         "password",
+#         "Password1!",
+#         "correct horse battery staple",
+#         generate_password(10),
+#         generate_custom_password(upper_count=2, lower_count=4, digit_count=2, special_count=2),
+#     ]
+#     for pw in test_passwords:
+#         r = check_strength(pw)
+#         print(f"{pw!r} -> score {r['score']}, crack time: {r['crack_time']}")

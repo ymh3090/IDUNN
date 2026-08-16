@@ -21,9 +21,6 @@ class VaultWindow(ctk.CTkToplevel):
         self._build_static_ui()
         self.refresh_list()
 
-    # ------------------------------------------------------------------
-    # Static layout — header, scrollable list area, add button
-    # ------------------------------------------------------------------
     def _build_static_ui(self):
         header = ctk.CTkLabel(
             self,
@@ -174,7 +171,7 @@ class VaultWindow(ctk.CTkToplevel):
         save_btn.pack(pady=15)
 
 
-if __name__ == "__main__":
-    ctk.set_appearance_mode("dark")
-    app = VaultWindow(master_password="masterpw")
-    app.mainloop()
+# if __name__ == "__main__":
+#     ctk.set_appearance_mode("dark")
+#     app = VaultWindow(master_password="masterpw")
+#     app.mainloop()

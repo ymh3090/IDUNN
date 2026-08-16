@@ -1,14 +1,10 @@
 import customtkinter as ctk
 import pyperclip
 import threading
-
 from src.password_utils import generate_password, generate_custom_password
 
 
 class GeneratorWindow(ctk.CTkToplevel):
-    """Standalone password generator. No master password, no db access —
-    only imports from password_utils, same rule as checker_window.py."""
-
     def __init__(self, master):
         super().__init__(master)
         self.title("Password Generator")
@@ -118,14 +114,14 @@ class GeneratorWindow(ctk.CTkToplevel):
             self.status_label.configure(text="Generate a password first.")
             return
         pyperclip.copy(pwd)
-        self.status_label.configure(text="Copied! Clearing in 20 seconds...", text_color="#3ac96b")
+        self.status_label.configure(text="Copied!", text_color="#3ac96b")
         threading.Timer(20, lambda: pyperclip.copy("")).start()
 
-
-if __name__ == "__main__":
-    # standalone test — normally opened from hub_window.py
-    ctk.set_appearance_mode("dark")
-    root = ctk.CTk()
-    root.withdraw()  # hide the throwaway root, only show the Toplevel
-    win = GeneratorWindow(root)
-    root.mainloop()
+#
+# if __name__ == "__main__":
+#     # standalone test — normally opened from hub_window.py
+#     ctk.set_appearance_mode("dark")
+#     root = ctk.CTk()
+#     root.withdraw()  # hide the throwaway root, only show the Toplevel
+#     win = GeneratorWindow(root)
+#     root.mainloop()

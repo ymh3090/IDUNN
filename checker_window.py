@@ -67,11 +67,11 @@ class CheckerWindow(ctk.CTkToplevel):
             text="\n".join(result["suggestions"]) if result["suggestions"] else ""
         )
 
-
-if __name__ == "__main__":
-    # standalone test — normally opened from hub_window.py
-    ctk.set_appearance_mode("dark")
-    root = ctk.CTk()
-    root.withdraw()
-    win = CheckerWindow(root)
-    root.mainloop()
+#
+# if __name__ == "__main__":
+#     # standalone test — normally opened from hub_window.py
+#     ctk.set_appearance_mode("dark")
+#     root = ctk.CTk()
+#     root.withdraw()
+#     win = CheckerWindow(root)
+#     root.mainloop()
